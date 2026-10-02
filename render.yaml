@@ -2,7 +2,7 @@ services:
   - type: web
     name: tentarte
     runtime: python
-    plan: starter
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 4
     healthCheckPath: /
@@ -11,11 +11,15 @@ services:
         value: 3.13.9
       - key: HTTPS
         value: "1"
-      - key: TENTARTE_DATA_DIR
-        value: /var/data/tentarte
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
       - key: ADMIN_PASSWORD
         generateValue: true
-    disk:
-      name: tentarte-data
-      mountPath: /var/data
-      sizeGB: 1
