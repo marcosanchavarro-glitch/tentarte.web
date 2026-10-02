@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: tentarte
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 4
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.9
+      - key: HTTPS
+        value: "1"
+      - key: TENTARTE_DATA_DIR
+        value: /var/data/tentarte
+      - key: ADMIN_PASSWORD
+        generateValue: true
+    disk:
+      name: tentarte-data
+      mountPath: /var/data
+      sizeGB: 1

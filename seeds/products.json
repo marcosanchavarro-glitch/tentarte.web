@@ -1,0 +1,5 @@
+[
+  {"slug":"oreo","name":"Tarta Oreo","description":"Base sablée de chocolate + crema Bariloche + crema Oreo + Oreos.","image":"/images/products/oreo/oreo.jpg","variants":[{"size_cm":28,"image":null},{"size_cm":12,"image":null}]},
+  {"slug":"banoffee","name":"Tarta Banoffee","description":"Base sablée + dulce de leche + banana + crema.","image":"/images/products/banoffee/banoffee.jpg","variants":[{"size_cm":28,"image":null},{"size_cm":12,"image":null}]},
+  {"slug":"toffee","name":"Tarta Toffee","description":"Base sablée + dulce de leche + ganache de chocolate.","image":"/images/products/toffee/toffee.jpg","variants":[{"size_cm":28,"image":null},{"size_cm":12,"image":null}]}
+]
