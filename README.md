@@ -92,13 +92,17 @@ Las variantes comparten el producto y pueden tener imágenes propias. Los precio
 
 Composición, capas, galería y opciones se agregan y reordenan con controles del panel. Para nuevas capas/fotos de galería, crear el espacio y guardar primero; después subir su fotografía. Las opciones con alternativas separadas por `|` ofrecen un selector; sin alternativas permiten texto libre. No agregamos opciones comerciales ficticias.
 
-La experiencia mejora automáticamente según el contenido disponible:
+La experiencia interactiva pública es exclusiva de Oreo. Banoffee, Toffee y los demás productos mantienen su catálogo fotográfico. El bloque editorial existente `experience` aloja `OreoExperience`, sin cambios de base de datos ni infraestructura.
 
-1. Principal: presentación y composición.
-2. Principal + corte: botón para revelar el interior.
-3. Principal + corte + imágenes de todas las capas, con experiencia avanzada habilitada: separación, nombres, reconstrucción y corte.
+- Foto principal: composición original completa, sin recorte ni ingredientes generados.
+- Foto de corte: se carga en Administración → Oreo → Fotografías → Interior / corte. Al cargarla, se habilita «Explorar el interior» con transición reversible. Sin foto válida, el botón queda deshabilitado con explicación; no se reutiliza la foto completa como un corte ficticio.
+- La ficha de Oreo incluye acceso a la misma experiencia y regreso al formulario de pedido. Precios, variantes y WhatsApp conservan sus rutas existentes.
+- Entrada por scroll de 24 px como máximo, reversible al subir; movimiento reducido desactiva desplazamientos y transiciones. Sin JavaScript se muestran las fotografías disponibles.
+- Los campos `product_visual_layers` se conservan para la fase posterior. Los slots previstos son `chocolate-base`, `chocolate-filling`, `oreo-cream` y `decoration`; cada recurso tendrá su propio elemento `.oreo-layer` y desplazamientos `--layer-x` / `--layer-y`. **La animación de capas no está activada**: requiere cuatro recursos independientes con transparencia real, composición alineada y revisión visual. Subir archivos a los campos existentes no activa una separación automática.
 
-Las capas se ordenan desde la base hacia arriba y aceptan PNG transparente. Sin todos los assets, se muestra el nivel disponible. Las fotos de corte y capas no están inventadas ni incluidas en los productos iniciales.
+Pendientes al implementar esta etapa: foto real del corte y las cuatro capas recortadas. También se comprobó que el panel de producción todavía no tiene una foto de corte de Oreo. Los tests usan imágenes sintéticas únicamente en bases temporales, nunca como fotografías publicadas.
+
+Verificación Oreo: `python -m unittest discover -s tests -v` y `node tests/oreo_motion.cjs`. Esta última comprueba reversibilidad de vistas/scroll, cambio dinámico de movimiento reducido y ausencia de corte. La validación visual del interior real queda pendiente de recibir ese archivo.
 
 `forms.py` valida los formularios; `presentation.py` arma las vistas y enlaces; `uploads.py` procesa archivos en memoria. Las imágenes de Cloudinary usan transformaciones de tamaño/calidad/formato y `srcset`. Las fotos fuera del hero cargan de forma diferida. Se usa el logo transparente actualizado del repositorio, sin agregar fondos ni contenedores visibles.
 
@@ -112,7 +116,7 @@ Antes de actualizar producción, conservar un respaldo/restauración disponible 
 
 El plan gratuito de Render puede suspender el servicio y demorar la primera visita. Es una limitación de infraestructura: no se agregan pings artificiales ni procesos para evitar la suspensión.
 
-Las pruebas de evolución cubren también migración desde el esquema anterior, precios y contacto persistentes, alta/edición/publicación, formularios obsoletos, banners, generación de WhatsApp, transparencia y los tres niveles de experiencia. Los datos de prueba se crean en bases temporales y no se publican.
+Las pruebas de evolución cubren también migración desde el esquema anterior, precios y contacto persistentes, alta/edición/publicación, formularios obsoletos, banners, generación de WhatsApp, transparencia y compatibilidad del modelo visual anterior. Los datos de prueba se crean en bases temporales y no se publican.
 
 ## Tentarte 3.0: sistema editorial
 

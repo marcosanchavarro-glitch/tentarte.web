@@ -1,0 +1,27 @@
+{% macro OreoExperience(product, context='home') %}
+{% set key = 'oreo-' ~ context %}
+<section class="oreo-experience section-space" id="{{ 'experiencia' if context == 'home' else 'oreo-experience' }}" data-oreo-experience aria-labelledby="{{ key }}-heading">
+  <div class="oreo-copy">
+    <p class="eyebrow">Oreo · un vistazo más cerca</p>
+    <h2 id="{{ key }}-heading">el antojo,<br>por dentro.</h2>
+    <p>{{ product.short_description or product.description }}</p>
+    <div class="oreo-controls" role="group" aria-label="Vistas de la tarta Oreo">
+      <button type="button" data-oreo-view="whole" aria-controls="{{ key }}-photos" aria-pressed="true">Tarta completa</button>
+      <button type="button" data-oreo-view="interior" aria-controls="{{ key }}-photos" aria-pressed="false" {% if not product.cut_image %}disabled aria-describedby="{{ key }}-pending"{% endif %}>Explorar el interior</button>
+    </div>
+    {% if not product.cut_image %}<p class="oreo-note" id="{{ key }}-pending">Pronto vas a poder conocer el interior con una fotografía de su corte real.</p>{% endif %}
+    <p class="oreo-note" data-oreo-status aria-live="polite">Tarta completa{{ ' · ' ~ product.photo_reference if product.photo_reference else '' }}</p>
+    {% if context == 'home' %}<a class="pill" href="{{ url_for('product_detail', slug=product.slug) }}">Elegí tu Oreo ↗</a>{% else %}<a class="text-link" href="#pedido">Elegir tamaño y encargar ↗</a>{% endif %}
+    <noscript><p>Las fotografías disponibles se muestran a continuación.</p></noscript>
+  </div>
+  <div class="oreo-visual" id="{{ key }}-photos">
+    {% for view, path, alt in [('whole', product.main_image, 'Tarta Oreo completa'), ('interior', product.cut_image, 'Corte real de la tarta Oreo')] %}
+      {% if path %}<figure class="oreo-photo" data-oreo-photo="{{ view }}">
+        <img src="{{ image_url(path, 900) }}" {% if path.startswith('https://') %}srcset="{{ image_url(path, 480) }} 480w, {{ image_url(path, 900) }} 900w, {{ image_url(path, 1400) }} 1400w" sizes="(max-width: 760px) 92vw, 50vw"{% endif %} alt="{{ alt }}" loading="lazy" decoding="async">
+        <figcaption>{{ 'Tarta completa' if view == 'whole' else 'Corte real' }}</figcaption>
+      </figure>{% endif %}
+    {% endfor %}
+    {% if not product.main_image %}<p>Fotografía de Oreo pendiente.</p>{% endif %}
+  </div>
+</section>
+{% endmacro %}

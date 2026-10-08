@@ -65,7 +65,7 @@ class EvolutionTests(unittest.TestCase):
         product = self.catalog.get(pid=pid)
         self.assertEqual(product_view(product)['experience_level'], 3)
         page = self.client.get('/').text
-        self.assertIn('data-explode', page)
+        self.assertNotIn('data-explode', page)  # Non-Oreo uploads never enable a 2.5D renderer
         option = product['options'][0]['id']
         order = self.client.get('/tartas/' + product['slug'] + f'/encargar?size=28&option_{option}=Feliz%20cumple')
         self.assertIn('Mensaje: Feliz cumple', unquote(order.location))

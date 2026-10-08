@@ -37,6 +37,9 @@ def product_view(product):
     result['from_price'] = min(active_prices) if active_prices else None
     result['composition'] = ' · '.join(c['name'] for c in product['components'])
     result['experience_level'] = 1
+    # OreoExperience phase one deliberately never promotes uploaded layers to 2.5D.
+    # Independent transparent assets need visual validation before that feature ships.
+    result['oreo_experience'] = product['slug'] == 'oreo' and bool(product['visual_experience_enabled'])
     if result['main_image'] and result['cut_image']:
         result['experience_level'] = 2
         if product['visual_experience_enabled'] and result['layers'] and all(l['image'] for l in result['layers']):
