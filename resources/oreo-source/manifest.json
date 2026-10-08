@@ -1,0 +1,30 @@
+{
+  "project": "Tentarte",
+  "feature": "Oreo 2.5D",
+  "product": "Oreo only",
+  "layers": [
+    {
+      "name": "01_decoracion_oreo.png",
+      "order": 1
+    },
+    {
+      "name": "02_crema_oreo.png",
+      "order": 2
+    },
+    {
+      "name": "03_relleno_chocolate.png",
+      "order": 3
+    },
+    {
+      "name": "04_base_sablee_chocolate.png",
+      "order": 4
+    }
+  ],
+  "warning": "Los recortes de capas provienen de una composición ilustrativa. Revisar fidelidad y bordes antes de publicar.",
+  "recommended": {
+    "hero": "web/oreo_hero.webp",
+    "whole": "web/oreo_tarta_transparente.png",
+    "cut": "web/oreo_corte_transparente.png",
+    "fallback": "web/oreo_corte.webp"
+  }
+}

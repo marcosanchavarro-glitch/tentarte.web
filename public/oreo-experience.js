@@ -1,7 +1,6 @@
 (() => {
   'use strict';
-  // Phase two contract: one independently positioned, verified transparent asset per slot.
-  // No layer renderer is enabled in phase one; the real cut remains the interior view.
+  // Each layer is a distinct, inspected RGBA resource; never a clone of the whole photo.
   const layerSlots = Object.freeze(['chocolate-base', 'chocolate-filling', 'oreo-cream', 'decoration']);
   class OreoExperience {
     static layerSlots = layerSlots;
@@ -17,15 +16,20 @@
         if (!this.photos.some(photo => photo.dataset.oreoPhoto === view)) return;
         this.buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.oreoView === view)));
         this.photos.forEach(photo => photo.setAttribute('aria-hidden', String(photo.dataset.oreoPhoto !== view)));
-        root.querySelector('[data-oreo-status]').textContent = view === 'whole' ? wholeStatus : 'Corte real de Oreo';
+        root.querySelector('[data-oreo-status]').textContent = view === 'whole' ? wholeStatus : view === 'layers' ? 'Cuatro capas ilustrativas. Volvé a Tarta completa para reconstruir la vista.' : root.dataset?.illustrative === 'true' ? 'Interior ilustrativo de Oreo' : 'Corte real de Oreo';
       };
       this.buttons.forEach(button => button.addEventListener('click', () => this.select(button.dataset.oreoView)));
-      this.photos.forEach(photo => photo.querySelector('img').addEventListener('error', () => {
+      this.photos.forEach(photo => photo.querySelectorAll('img').forEach(image => image.addEventListener('error', () => {
+        if (image.dataset.fallback) {
+          const fallback = image.dataset.fallback;
+          delete image.dataset.fallback;
+          image.removeAttribute('srcset'); image.src = fallback; return;
+        }
         const button = this.buttons.find(item => item.dataset.oreoView === photo.dataset.oreoPhoto);
         button.disabled = true;
-        if (photo.dataset.oreoPhoto === 'interior') this.select('whole');
+        if (photo.dataset.oreoPhoto !== 'whole') this.select('whole');
         root.querySelector('[data-oreo-status]').textContent = 'No pudimos cargar esta fotografía. Podés volver a intentarlo recargando la página.';
-      }));
+      })));
       this.select('whole');
       root.classList.add('oreo-ready');
       this.update = () => {

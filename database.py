@@ -63,6 +63,8 @@ class Catalog:
             initial = migrate(conn, metadata)
             if not initial:
                 self._business_seed(conn)
+                from oreo_assets import seed_oreo
+                seed_oreo(conn, products, layers, gallery)
                 return
             for product in json.loads((Path(__file__).parent / 'seeds/products.json').read_text(encoding='utf-8')):
                 values = {key: product[key] for key in ('slug', 'name', 'description', 'image')}
@@ -78,6 +80,8 @@ class Catalog:
                     conn.execute(update(products).where(products.c.id == row['id']).values(photo_reference='Presentación de 28 cm'))
             conn.execute(text('INSERT INTO schema_migrations(version) VALUES(1)'))
             self._business_seed(conn)
+            from oreo_assets import seed_oreo
+            seed_oreo(conn, products, layers, gallery)
 
     def _business_seed(self, conn):
         if conn.execute(text('SELECT version FROM schema_migrations WHERE version=2')).first():

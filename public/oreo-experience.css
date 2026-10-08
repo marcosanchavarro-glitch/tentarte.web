@@ -24,3 +24,15 @@
 @media(prefers-reduced-motion:reduce) {.oreo-photo {transition:none!important;}.oreo-experience.oreo-scroll .oreo-visual {transform:none;opacity:1;}}
 
 .oreo-ready .oreo-controls {display:flex;}
+.oreo-stack {position:relative;flex:1;min-height:0;width:100%;isolation:isolate;}
+.oreo-experience:not(.oreo-ready) .oreo-stack {aspect-ratio:1;}
+.oreo-layer {position:absolute;left:5%;width:90%;transform:translate3d(0,0,0);transition:transform .7s cubic-bezier(.22,.61,.36,1);}
+.oreo-ready .oreo-layer img {width:100%;height:auto;display:block;}
+.oreo-layer-decoration {top:20%;left:9%;width:82%;z-index:4;--layer-y:-44px;}
+.oreo-layer-cream {top:40%;z-index:3;--layer-y:-14px;}
+.oreo-layer-chocolate {top:55%;z-index:2;--layer-y:14px;}
+.oreo-layer-base {top:69%;left:8%;width:84%;z-index:1;--layer-y:44px;}
+.oreo-layer-view[aria-hidden=false] .oreo-layer {transform:translate3d(0,var(--layer-y),0);}
+.oreo-layer-view figcaption {flex:none;}
+@media(max-width:760px) {.oreo-layer-decoration {--layer-y:-24px;}.oreo-layer-cream {--layer-y:-8px;}.oreo-layer-chocolate {--layer-y:8px;}.oreo-layer-base {--layer-y:24px;}}
+@media(prefers-reduced-motion:reduce) {.oreo-layer {transition:none!important;}}

@@ -3,6 +3,10 @@ from urllib.parse import unquote
 from sqlalchemy import update
 import test_assets
 from database import products
+from database import Catalog, layers
+from presentation import product_view
+from PIL import Image
+from pathlib import Path
 
 
 class OreoTests(unittest.TestCase):
@@ -10,7 +14,28 @@ class OreoTests(unittest.TestCase):
     login = test_assets.CatalogTests.login
     photo = test_assets.CatalogTests.photo
 
+    def test_package_layers_transparency_and_restart_preserves_admin_changes(self):
+        product = self.catalog.get(slug='oreo')
+        view = product_view(product)
+        self.assertEqual(len(view['oreo_layers']), 4)
+        self.assertEqual(len({l['image'] for l in view['oreo_layers']}), 4)
+        for layer in view['oreo_layers']:
+            with Image.open(Path('public') / layer['image'].lstrip('/')) as image:
+                self.assertEqual(image.getchannel('A').getextrema(), (0, 255))
+        self.assertIn('data-oreo-photo="layers"', self.client.get('/').text)
+        with self.catalog.engine.begin() as conn:
+            conn.execute(update(products).where(products.c.id == product['id']).values(image='/images/products/oreo/oreo.jpg'))
+            conn.execute(update(layers).where(layers.c.id == product['layers'][0]['id']).values(image=None))
+        restarted = Catalog(self.config['DATABASE_URL'])
+        self.addCleanup(restarted.engine.dispose)
+        after = restarted.get(slug='oreo')
+        self.assertEqual(after['image'], '/images/products/oreo/oreo.jpg')
+        self.assertEqual(len(after['gallery']), len(product['gallery']))
+        self.assertEqual(product_view(after)['oreo_layers'], [])
+
     def test_exclusive_component_missing_cut_and_orders_unchanged(self):
+        with self.catalog.engine.begin() as conn:
+            conn.execute(update(products).where(products.c.slug == 'oreo').values(cut_image=None))
         home = self.client.get('/').text
         self.assertEqual(home.count('data-oreo-experience'), 1)
         self.assertNotIn('data-explode', home)
@@ -34,7 +59,7 @@ class OreoTests(unittest.TestCase):
         for url in ('/', '/tartas/oreo'):
             page = self.client.get(url).text
             self.assertIn('data-oreo-photo="interior"', page)
-            self.assertIn('Corte real de la tarta Oreo', page)
+            self.assertIn('Vista del interior de Oreo', page)
             self.assertNotIn('disabled aria-describedby="oreo-', page)
             self.assertNotIn('data-explode', page)
             self.assertIn('https://res.cloudinary.com/test/', page)

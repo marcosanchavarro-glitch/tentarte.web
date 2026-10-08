@@ -92,17 +92,17 @@ Las variantes comparten el producto y pueden tener imágenes propias. Los precio
 
 Composición, capas, galería y opciones se agregan y reordenan con controles del panel. Para nuevas capas/fotos de galería, crear el espacio y guardar primero; después subir su fotografía. Las opciones con alternativas separadas por `|` ofrecen un selector; sin alternativas permiten texto libre. No agregamos opciones comerciales ficticias.
 
-La experiencia interactiva pública es exclusiva de Oreo. Banoffee, Toffee y los demás productos mantienen su catálogo fotográfico. El bloque editorial existente `experience` aloja `OreoExperience`, sin cambios de base de datos ni infraestructura.
+La experiencia interactiva pública es exclusiva de Oreo. Se utiliza el paquete completo `Tentarte_Oreo_2_5D_Assets.zip`, autorizado por el propietario el 8 de octubre de 2026 **incluido su origen generado**. Las vistas se identifican como ilustrativas.
 
-- Foto principal: composición original completa, sin recorte ni ingredientes generados.
-- Foto de corte: se carga en Administración → Oreo → Fotografías → Interior / corte. Al cargarla, se habilita «Explorar el interior» con transición reversible. Sin foto válida, el botón queda deshabilitado con explicación; no se reutiliza la foto completa como un corte ficticio.
-- La ficha de Oreo incluye acceso a la misma experiencia y regreso al formulario de pedido. Precios, variantes y WhatsApp conservan sus rutas existentes.
-- Entrada por scroll de 24 px como máximo, reversible al subir; movimiento reducido desactiva desplazamientos y transiciones. Sin JavaScript se muestran las fotografías disponibles.
-- Los campos `product_visual_layers` se conservan para la fase posterior. Los slots previstos son `chocolate-base`, `chocolate-filling`, `oreo-cream` y `decoration`; cada recurso tendrá su propio elemento `.oreo-layer` y desplazamientos `--layer-x` / `--layer-y`. **La animación de capas no está activada**: requiere cuatro recursos independientes con transparencia real, composición alineada y revisión visual. Subir archivos a los campos existentes no activa una separación automática.
+- `public/images/products/oreo/experience/web`: tarta transparente, corte transparente, corte con fondo de respaldo, hero ambientado y vista superior en WebP.
+- `public/images/products/oreo/experience/capas`: cuatro imágenes independientes con canal alfa real. Se verificaron visualmente y se animan por separado; no se recorta una única imagen mediante código.
+- `resources/oreo-source`: todos los originales, PNG de alta resolución, referencia generada, manifiesto y notas del paquete. No se descargan en cada visita ni duplican las versiones WebP de producción.
+- La migración de datos 4 incorpora las imágenes a los campos existentes de Oreo, galería y capas. Se ejecuta una sola vez, conserva fotos personalizadas, no cambia precios/variantes/contacto ni modifica Banoffee o Toffee. La foto histórica de Oreo queda en la galería.
+- Tres vistas reversibles: **Tarta completa**, **Explorar el interior**, **Descubrir las capas**. Los desplazamientos individuales son moderados y más pequeños en móvil; movimiento reducido elimina las transiciones no esenciales. Sin JavaScript, todas las vistas disponibles son legibles.
+- Los archivos del paquete conservan sus bordes originales: algunas capas contienen fragmentos de las vecinas y cortes rectos. La visualización es ilustrativa, no una reconstrucción exacta ni un modelo 360°. No se generaron recursos nuevos ni se retocaron los suministrados.
+- Una sustitución/eliminación administrativa no se revierte al reiniciar. Si el conjunto aprobado deja de estar completo, la separación se desactiva hasta validar los reemplazos; el resto del catálogo y las subidas a Cloudinary mantienen el funcionamiento habitual.
 
-Pendientes al implementar esta etapa: foto real del corte y las cuatro capas recortadas. También se comprobó que el panel de producción todavía no tiene una foto de corte de Oreo. Los tests usan imágenes sintéticas únicamente en bases temporales, nunca como fotografías publicadas.
-
-Verificación Oreo: `python -m unittest discover -s tests -v` y `node tests/oreo_motion.cjs`. Esta última comprueba reversibilidad de vistas/scroll, cambio dinámico de movimiento reducido y ausencia de corte. La validación visual del interior real queda pendiente de recibir ese archivo.
+Verificación: `python -m unittest discover -s tests -v`, `node tests/oreo_motion.cjs`, `node tests/editorial_motion.cjs`; además, revisión visual desktop/móvil y del retorno capas → tarta → interior.
 
 `forms.py` valida los formularios; `presentation.py` arma las vistas y enlaces; `uploads.py` procesa archivos en memoria. Las imágenes de Cloudinary usan transformaciones de tamaño/calidad/formato y `srcset`. Las fotos fuera del hero cargan de forma diferida. Se usa el logo transparente actualizado del repositorio, sin agregar fondos ni contenedores visibles.
 

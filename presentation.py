@@ -37,9 +37,16 @@ def product_view(product):
     result['from_price'] = min(active_prices) if active_prices else None
     result['composition'] = ' · '.join(c['name'] for c in product['components'])
     result['experience_level'] = 1
-    # OreoExperience phase one deliberately never promotes uploaded layers to 2.5D.
-    # Independent transparent assets need visual validation before that feature ships.
     result['oreo_experience'] = product['slug'] == 'oreo' and bool(product['visual_experience_enabled'])
+    from oreo_assets import ROOT as OREO_ROOT, LAYERS, WHOLE, CUT, CUT_FALLBACK, HERO
+    result['oreo_illustrative'] = product['slug'] == 'oreo' and (product['image'] == WHOLE or product['cut_image'] == CUT)
+    result['hero_image'] = HERO if product['image'] == WHOLE and image_available(HERO) else product['image']
+    result['oreo_cut_fallback'] = image_available(CUT_FALLBACK) if product['cut_image'] == CUT else None
+    approved = {OREO_ROOT + 'capas/' + filename: slot for _, filename, slot in LAYERS}
+    result['oreo_layers'] = [dict(layer, slot=approved[layer['image']]) for layer in result['layers'] if layer['image'] in approved]
+    # Only this inspected RGBA package is approved; replacements must be checked separately.
+    if not result['oreo_experience'] or len(result['oreo_layers']) != 4 or len({l['slot'] for l in result['oreo_layers']}) != 4:
+        result['oreo_layers'] = []
     if result['main_image'] and result['cut_image']:
         result['experience_level'] = 2
         if product['visual_experience_enabled'] and result['layers'] and all(l['image'] for l in result['layers']):
