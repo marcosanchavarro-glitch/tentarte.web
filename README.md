@@ -43,7 +43,7 @@ Las fotos iniciales son de 28 cm. La variante de 12 cm reutiliza la principal ha
 
 ## Imágenes del panel
 
-Valen sigue seleccionando un archivo y presionando **Guardar fotografía**. Se validan JPG/PNG/WebP (8 MB, 25 megapíxeles), se corrige orientación y se recodifica en memoria a JPEG de hasta 2400 px. La subida va directamente a Cloudinary con un identificador aleatorio. PostgreSQL guarda `image` (URL HTTPS) e `image_id` (public ID), para producto y variante. No se guardan imágenes ni claves de sesión en disco local. La CSP permite `res.cloudinary.com`.
+Valen sigue seleccionando un archivo y presionando **Guardar fotografía**. Se validan JPG/PNG/WebP (8 MB, 25 megapíxeles), se corrige orientación y se recodifica en memoria a JPEG o PNG con transparencia, de hasta 2400 px. La subida va directamente a Cloudinary con un identificador aleatorio. PostgreSQL guarda `image` (URL HTTPS) e `image_id` (public ID), para producto, corte, variante, galería, capa y banner. No se guardan imágenes ni claves de sesión en disco local. La CSP permite `res.cloudinary.com`.
 
 Al reemplazar, primero se sube la nueva foto y se confirma el cambio en una transacción; después se elimina la anterior si no tiene referencias. **Eliminar fotografía** permite quitar la principal o la propia de una variante. La variante sin foto vuelve a usar la principal. Las imágenes estáticas nunca se borran físicamente desde el panel.
 
@@ -74,3 +74,42 @@ No se encontró almacenamiento `instance/` anterior con datos en este proyecto. 
 ```
 
 Las pruebas locales usan SQLite temporal y un doble de Cloudinary, sin subidas externas. Cubren autenticación/CSRF, seeds, variantes, validación, reemplazos, eliminaciones, referencias compartidas y recuperación ante fallos. No sustituyen una integración real con los proveedores configurados.
+
+## Rediseño y administración
+
+La aplicación conserva Flask/Jinja, SQLAlchemy Core, PostgreSQL y Cloudinary. No incorpora un framework de frontend ni librerías de animación: el selector, las transiciones y los formularios dinámicos usan JavaScript pequeño y CSS. Se respeta `prefers-reduced-motion`.
+
+- `/`: experiencia interactiva, bloques editoriales, banners y catálogo publicado.
+- `/tartas/<slug>`: ficha, tamaños, precios y opciones.
+- `/tartas/<slug>/encargar`: valida el tamaño/opciones y construye el enlace oficial `wa.me` con el precio de la base, nunca el enviado por el navegador.
+- `/admin`: productos, banners y número central de WhatsApp.
+- `/admin/products/new` y `/admin/products/<id>`: información, composición ordenable, variantes, publicación, imágenes y experiencia visual.
+- `/admin/banners/new` y `/admin/banners/<id>`: publicaciones con imagen opcional, texto, enlace, ubicación, orden y activación.
+
+Para crear una tarta: completar información, agregar componentes y tamaños/precios, elegir una foto, marcar **Publicado en catálogo** y guardar. No necesita corte ni capas. **Destacado** y **Mostrar en experiencia principal** son independientes de publicar. Para ocultar un producto o banner, desmarcar su publicación/activación y guardar. No hay inventario ni promesas de entrega o pago.
+
+Las variantes comparten el producto y pueden tener imágenes propias. Los precios se guardan como centavos enteros (ARS); un precio vacío permite consultar. La migración inicial incorpora los importes y WhatsApp confirmados por el propietario, una sola vez; las ediciones posteriores del panel se conservan.
+
+Composición, capas, galería y opciones se agregan y reordenan con controles del panel. Para nuevas capas/fotos de galería, crear el espacio y guardar primero; después subir su fotografía. Las opciones con alternativas separadas por `|` ofrecen un selector; sin alternativas permiten texto libre. No agregamos opciones comerciales ficticias.
+
+La experiencia mejora automáticamente según el contenido disponible:
+
+1. Principal: presentación y composición.
+2. Principal + corte: botón para revelar el interior.
+3. Principal + corte + imágenes de todas las capas, con experiencia avanzada habilitada: separación, nombres, reconstrucción y corte.
+
+Las capas se ordenan desde la base hacia arriba y aceptan PNG transparente. Sin todos los assets, se muestra el nivel disponible. Las fotos de corte y capas no están inventadas ni incluidas en los productos iniciales.
+
+`forms.py` valida los formularios; `presentation.py` arma las vistas y enlaces; `uploads.py` procesa archivos en memoria. Las imágenes de Cloudinary usan transformaciones de tamaño/calidad/formato y `srcset`. Las fotos fuera del hero cargan de forma diferida. Se usa el logo transparente actualizado del repositorio, sin agregar fondos ni contenedores visibles.
+
+## Migraciones de esta versión
+
+`migrations.py` aplica cambios **aditivos y transaccionales** al inicio. Agrega columnas a `products` y `variants` y crea `product_components`, `product_visual_layers`, `product_images`, `product_options`, `banners`, `site_settings` y `schema_migrations`. Conserva identificadores, URLs, public IDs, nombres y descripciones anteriores. PostgreSQL usa un bloqueo asesor para evitar carreras entre procesos al migrar. La cuenta necesita permisos de `CREATE` y `ALTER`.
+
+La composición inicial se deriva de la descripción existente una vez. Las futuras ejecuciones no recrean componentes o variantes eliminadas. Los formularios usan revisión para evitar que una pestaña vieja sobrescriba una edición nueva. Las fotografías se conservan al editar los metadatos y las referencias compartidas se comprueban antes de borrar un recurso remoto.
+
+Antes de actualizar producción, conservar un respaldo/restauración disponible del proveedor PostgreSQL. El despliegue se hace mediante el repositorio y servicio Render existentes; no requiere nuevas variables, comandos ni disco. Una reversión del código no necesita borrar las nuevas columnas o tablas.
+
+El plan gratuito de Render puede suspender el servicio y demorar la primera visita. Es una limitación de infraestructura: no se agregan pings artificiales ni procesos para evitar la suspensión.
+
+Las pruebas de evolución cubren también migración desde el esquema anterior, precios y contacto persistentes, alta/edición/publicación, formularios obsoletos, banners, generación de WhatsApp, transparencia y los tres niveles de experiencia. Los datos de prueba se crean en bases temporales y no se publican.
