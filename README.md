@@ -156,3 +156,19 @@ node tests/editorial_motion.cjs
 ```
 
 Las pruebas automatizadas usan bases temporales y Cloudinary simulado. Cubren migraciones anteriores, fechas y límites, permisos/CSRF, enlaces, publicación incompleta, previsualización sin subida, reemplazo fallido, referencias compartidas, duplicación/archivo/eliminación, campañas y protección de composición. La prueba JavaScript valida efectos, amplitud, intensidad cero, movimiento reducido y pausa por visibilidad. La integración real con Cloudinary debe verificarse aparte desde el panel publicado; una prueba simulada no acredita esa integración.
+### Verificación de producción — 8 de octubre de 2026
+
+La versión `b30a4cd` se desplegó correctamente en el servicio existente de Render.
+Desde `/admin/posters` se subió el logo original: Cloudinary devolvió una URL remota
+en `tentarte/editorial/` y la imagen cargó en el panel y en la home. Se verificaron
+los valores iniciales Float/35/publicado, la vista previa móvil y la edición a
+Tilt/50, ubicación destacada y enlace a Oreo.
+
+Se ejecutó **Restart service** en Render; tras el reinicio, el registro mantuvo la
+misma imagen remota, publicación y configuración. El cartel de verificación quedó
+archivado y ya no aparece en la home. Los tres productos se conservaron y el pedido
+de Oreo de 12 cm abrió WhatsApp con el número configurado y el precio de $6.200.
+No se envió un mensaje. Las 23 pruebas de backend y las comprobaciones JavaScript
+del movimiento también pasaron; la comprobación de Cloudinary descrita aquí fue
+real, adicional a las pruebas con proveedor simulado.
+
