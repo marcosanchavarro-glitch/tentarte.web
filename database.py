@@ -50,6 +50,8 @@ banners = Table('banners', metadata,
 settings = Table('site_settings', metadata, Column('key', Text, primary_key=True), Column('value', Text, nullable=False))
 cleanup = Table('image_cleanup', metadata, Column('public_id', Text, primary_key=True),
                 Column('after_time', Integer, nullable=False, default=0))
+from editorial_schema import extend_schema
+campaigns, home_blocks = extend_schema(metadata, banners)
 
 class Catalog:
     def __init__(self, url):

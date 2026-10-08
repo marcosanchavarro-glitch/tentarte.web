@@ -94,13 +94,13 @@ class EvolutionTests(unittest.TestCase):
 
     def test_banners_validation_and_remote_cleanup(self):
         token = self.login()
-        self.assertEqual(self.client.get('/admin/banners/new').status_code, 200)
+        self.assertEqual(self.client.get('/admin/banners/new', follow_redirects=True).status_code, 200)
         values = {'csrf':token,'title':'Una pausa dulce','subtitle':'Por encargo','cta':'Ver tartas','link':'/#tartas','location':'between','position':'2','active':'on','image':(self.photo(),'banner.png')}
         response = self.client.post('/admin/banners', data=values)
         self.assertEqual(response.status_code, 302)
         banner = self.catalog.banner_list()[0]
         self.assertIn('Una pausa dulce', self.client.get('/').text)
-        self.assertEqual(self.client.get(response.location).status_code, 200)
+        self.assertEqual(self.client.get(response.location, follow_redirects=True).status_code, 200)
         values.pop('image')
         values.update(revision=str(banner['revision']),active='',link='javascript:alert(1)')
         self.assertEqual(self.client.post(response.location,data=values).status_code,400)

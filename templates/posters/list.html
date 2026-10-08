@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% from 'admin_macros.html' import csrf_field %}
+{% block body_class %}admin-page{% endblock %}
+{% block content %}
+<div class="admin-shell editorial-admin">
+  <a class="back-link" href="{{ url_for('admin') }}">Administración</a>
+  <div class="admin-heading"><div><p class="eyebrow">Sistema editorial Tentarte</p><h1>Carteles</h1><p>Tus diseños. Su lugar. Su movimiento.</p></div><a class="pill" href="{{ url_for('editorial.edit') }}">Crear cartel</a></div>
+  <nav class="editorial-nav" aria-label="Administración editorial"><a href="{{ url_for('editorial.composition') }}">Composición de la home</a><a href="{{ url_for('editorial.campaign_list') }}">Campañas</a></nav>
+  <p class="admin-help">Programación en horario de Buenos Aires. Las copias se crean como borradores y comparten la imagen hasta que la reemplaces.</p>
+  {% for poster in posters %}
+  <article class="poster-list-row">
+    <div class="poster-thumb">{% if image_available(poster.image) %}<img src="{{ image_url(poster.image,480) }}" alt="{{ poster.alt_text }}" loading="lazy" width="120" height="120">{% endif %}</div>
+    <div><h2>{{ poster.internal_name or poster.title }}</h2><p>{{ editorial_placements.get(poster.location,poster.location) }} · {{ editorial_animations.get(poster.animation_type,poster.animation_type) }} · {{ poster.animation_intensity }} %</p><span class="status-badge">{{ poster.status }}</span><span>Orden {{ poster.position }}</span></div>
+    <div class="poster-actions"><a class="text-link" href="{{ url_for('editorial.edit',pid=poster.id) }}">Editar</a>
+      <form action="{{ url_for('editorial.action',pid=poster.id,action='duplicate') }}" method="post">{{ csrf_field() }}<input type="hidden" name="revision" value="{{ poster.revision }}"><button class="text-link">Duplicar</button></form>
+      <form action="{{ url_for('editorial.action',pid=poster.id,action='restore' if poster.archived else 'archive') }}" method="post">{{ csrf_field() }}<input type="hidden" name="revision" value="{{ poster.revision }}"><button class="text-link">{{ 'Restaurar' if poster.archived else 'Archivar' }}</button></form>
+    </div>
+  </article>
+  {% else %}<div class="editorial-empty"><h2>un espacio para tus ideas.</h2><p>Subí tu primer diseño. Conservamos su composición y lo hacemos parte de Tentarte.</p></div>{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,2 @@
+<section class="share-editorial"><div><p class="eyebrow">Hay cosas que no duran mucho.</p><h2>Llega,<br>se comparte<br>y <em>desaparece.</em></h2><a class="text-link" href="#tartas">Elegí la tuya ↗</a></div><div class="share-photo">{% if products|length > 1 %}{{ photo(products[1].image, products[1].name) }}{% elif products %}{{ photo(products[0].image, products[0].name) }}{% endif %}<span class="scribble">¿Un pedacito más?</span></div></section>
+{{ banner_group(banners, 'overlay') }}

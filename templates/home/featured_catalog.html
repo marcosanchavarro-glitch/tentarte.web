@@ -1,0 +1,4 @@
+<section class="section-space featured-selection"><p class="eyebrow">La selección de Tentarte</p><h2>{{ block.title or 'para tentarte.' }}</h2><div class="catalog-list">
+{% for product in products if product.featured %}
+<article class="catalog-item"><a class="catalog-photo" href="{{ url_for('product_detail',slug=product.slug) }}">{{ photo(product.image,product.name) }}</a><div class="catalog-info"><div><h3>{{ product.name }}</h3><p>{{ product.short_description or product.composition }}</p><p>Desde {{ money(product.from_price) }}</p><a class="text-link" href="{{ url_for('product_detail',slug=product.slug) }}">Ver y encargar</a></div></div></article>
+{% endfor %}</div></section>

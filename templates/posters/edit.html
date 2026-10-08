@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% from 'admin_macros.html' import csrf_field %}
+{% block body_class %}admin-page{% endblock %}
+{% block content %}
+<div class="admin-shell editorial-admin">
+<a class="back-link" href="{{ url_for('editorial.listing') }}">Volver a carteles</a>
+<h1>{{ poster.internal_name if poster else 'Un nuevo cartel.' }}</h1>
+<p>Tu diseño conserva su composición. Vos elegís dónde aparece y cómo se mueve.</p>
+{% if poster and poster.archived %}<p class="flash">Este cartel está archivado. Restauralo desde el listado para volver a publicarlo.</p>{% endif %}
+<form method="post" enctype="multipart/form-data" action="{{ url_for('editorial.save',pid=poster.id) if poster else url_for('editorial.save') }}" id="poster-form" data-poster-editor>
+{{ csrf_field() }}<input type="hidden" name="poster_id" value="{{ poster.id if poster else '' }}"><input type="hidden" name="revision" value="{{ poster.revision if poster else 1 }}">
+<section class="admin-box"><h2>01 / Tu diseño</h2>
+<label>Nombre interno<input name="internal_name" required maxlength="150" value="{{ poster.internal_name if poster else '' }}" placeholder="Para reconocerlo en el panel"></label>
+<label>Texto alternativo<input name="alt_text" required maxlength="300" value="{{ poster.alt_text if poster else '' }}" placeholder="Describí el diseño e incluí el texto importante"></label>
+<p>Este texto permite comprender el cartel sin ver la imagen.</p>
+{% if poster and image_available(poster.image) %}<img class="admin-poster-image" src="{{ image_url(poster.image,480) }}" alt="{{ poster.alt_text }}">{% endif %}
+<label>{{ 'Reemplazar imagen' if poster and poster.image else 'Imagen del cartel' }}<input type="file" name="image" accept="image/png,image/jpeg,image/webp"></label><p>PNG, JPG o WebP · Hasta 8 MB y 25 megapíxeles. Sin recortar el archivo original. Para publicar, necesitás una imagen.</p>
+{% if poster and poster.content_kind == 'legacy' %}<details><summary>Texto del banner anterior</summary><label>Título<input name="title" maxlength="150" value="{{ poster.title }}"></label><label>Subtítulo<textarea name="subtitle" maxlength="300">{{ poster.subtitle }}</textarea></label><label>Texto del botón<input name="cta" maxlength="60" value="{{ poster.cta }}"></label><p>Este banner conserva el formato anterior para respetar su contenido.</p></details>{% endif %}
+</section>
+<section class="admin-box"><h2>02 / Su lugar</h2><div class="form-columns">
+<label>Ubicación<select name="location">{% for key,label in editorial_placements.items() %}<option value="{{ key }}" {% if (poster.location if poster else 'between') == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label>Orden<input name="position" type="number" min="0" max="10000" value="{{ poster.position if poster else 0 }}"></label>
+<label>Alineación<select name="alignment">{% for key,label in [('left','Izquierda'),('center','Centro'),('right','Derecha')] %}<option value="{{ key }}" {% if (poster.alignment if poster else 'center') == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label>Tamaño visual<select name="visual_size">{% for key,label in [('small','Pequeño'),('medium','Mediano'),('large','Grande'),('full','Ancho completo')] %}<option value="{{ key }}" {% if (poster.visual_size if poster else 'medium') == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label>Ajuste de imagen<select name="image_fit"><option value="contain">Completa, sin recorte (recomendado)</option><option value="cover" {% if poster and poster.image_fit == 'cover' %}selected{% endif %}>Cubrir el espacio (puede recortar)</option></select></label>
+<label>Campaña<select name="campaign_id"><option value="">Sin campaña</option>{% for campaign in campaigns %}<option value="{{ campaign.id }}" {% if poster and poster.campaign_id == campaign.id %}selected{% endif %}>{{ campaign.name }}</option>{% endfor %}</select></label>
+</div><p>El orden menor aparece primero dentro de cada ubicación. Las campañas con mayor prioridad aparecen antes. La superposición ocupa solamente el borde de la fotografía editorial.</p></section>
+<section class="admin-box"><h2>03 / Un poco de movimiento</h2>
+<label class="check"><input name="animation_enabled" type="checkbox" {% if not poster or poster.animation_enabled %}checked{% endif %}>Activar animación</label>
+<label>Animación<select name="animation_type">{% for key,label in editorial_animations.items() %}<option value="{{ key }}" {% if (poster.animation_type if poster else 'float') == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label>Intensidad <output data-intensity-output>{{ poster.animation_intensity if poster else 35 }} %</output><input name="animation_intensity" type="range" min="0" max="100" step="1" value="{{ poster.animation_intensity if poster else 35 }}"></label>
+<label>Retraso de aparición (milisegundos)<input name="animation_delay_ms" type="number" min="0" max="3000" step="50" value="{{ poster.animation_delay_ms if poster else 0 }}"></label>
+<p>Float al 35 %: unos 6 píxeles de recorrido y un ciclo de 6 segundos. Las personas que prefieren menos movimiento lo verán estático.</p>
+</section>
+<section class="admin-box"><h2>04 / A dónde invita</h2>
+<label>Tipo de enlace<select name="link_type" data-link-type>{% for key,label in [('none','Sin enlace'),('product','Producto'),('catalog','Catálogo'),('section','Sección de la home'),('internal_url','Ruta interna'),('external_url','Sitio externo HTTPS')] %}<option value="{{ key }}" {% if poster and poster.link_type == key %}selected{% endif %}>{{ label }}</option>{% endfor %}{% if poster and poster.link_type == 'legacy' %}<option value="legacy" selected>Enlace del banner anterior</option>{% endif %}</select></label>
+<label data-target-field>Destino<input name="link_target" maxlength="500" value="{{ poster.link_target if poster else '' }}" data-link-target></label>
+<label data-product-choice hidden>Producto<select data-product-picker><option value="">Elegí un producto</option>{% for product in products %}<option value="{{ product.id }}" {% if poster and poster.link_target == product.id|string %}selected{% endif %}>{{ product.name }}{{ ' (borrador)' if not product.published else '' }}</option>{% endfor %}</select></label>
+<label data-section-choice hidden>Sección<select data-section-picker>{% for key,label in [('tartas','Catálogo'),('experiencia','Experiencia'),('como-encargar','Cómo encargar')] %}<option value="{{ key }}" {% if poster and poster.link_target == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label class="check"><input type="checkbox" name="open_in_new_tab" {% if poster and poster.open_in_new_tab %}checked{% endif %}>Abrir enlace externo en otra pestaña</label><p>Para rutas internas usá /, /#tartas, /#experiencia, /#como-encargar o la ruta de un producto publicado. Un producto en borrador no genera un enlace público.</p>
+</section>
+<section class="admin-box"><h2>05 / Cuándo aparece</h2>
+<label class="check"><input type="checkbox" name="active" {% if not poster or poster.active %}checked{% endif %}>Publicado</label>
+<div class="form-columns"><label>Inicio (opcional)<input type="datetime-local" name="starts_at" min="2000-01-01T00:00" max="2100-12-31T23:59" value="{{ local_date(poster.starts_at) if poster else '' }}"></label><label>Vencimiento (opcional)<input type="datetime-local" name="ends_at" min="2000-01-01T00:00" max="2100-12-31T23:59" value="{{ local_date(poster.ends_at) if poster else '' }}"></label></div>
+<p>Horario de Buenos Aires (Argentina). Si pertenece a una campaña, también se respetan sus fechas y estado.</p></section>
+<div class="save-bar"><button class="pill" type="submit">Guardar cartel</button><button class="text-link" type="submit" formaction="{{ url_for('editorial.preview') }}" formtarget="poster-preview" data-preview>Actualizar vista previa</button></div>
+</form>
+<section class="admin-box"><h2>Así se ve</h2><p>La vista previa usa el mismo diseño y motor de la web. No publica ni sube archivos a Cloudinary. Actualizala después de cada cambio.</p><div class="preview-controls"><button type="button" class="text-link" data-preview-size="desktop" aria-pressed="true">Escritorio</button><button type="button" class="text-link" data-preview-size="mobile" aria-pressed="false">Celular</button></div><div class="preview-window"><iframe name="poster-preview" title="Vista previa del cartel" class="preview-frame preview-desktop"></iframe></div></section>
+{% if poster %}<details class="admin-box danger-zone"><summary>Eliminar cartel</summary><p>Se elimina este registro. La imagen remota se elimina solamente si ningún otro elemento la utiliza. Para conservarlo, archivá desde el listado.</p><form action="{{ url_for('editorial.action',pid=poster.id,action='delete') }}" method="post">{{ csrf_field() }}<input type="hidden" name="revision" value="{{ poster.revision }}"><label class="check"><input type="checkbox" name="confirm" value="delete" required>Confirmo que quiero eliminar este cartel</label><button class="text-link">Eliminar definitivamente</button></form></details>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="/poster-admin.js" defer></script>{% endblock %}

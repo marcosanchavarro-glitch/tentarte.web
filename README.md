@@ -113,3 +113,46 @@ Antes de actualizar producción, conservar un respaldo/restauración disponible 
 El plan gratuito de Render puede suspender el servicio y demorar la primera visita. Es una limitación de infraestructura: no se agregan pings artificiales ni procesos para evitar la suspensión.
 
 Las pruebas de evolución cubren también migración desde el esquema anterior, precios y contacto persistentes, alta/edición/publicación, formularios obsoletos, banners, generación de WhatsApp, transparencia y los tres niveles de experiencia. Los datos de prueba se crean en bases temporales y no se publican.
+
+## Tentarte 3.0: sistema editorial
+
+### Arquitectura y migración
+
+Se amplía `banners` en lugar de duplicar sus imágenes y registros. La migración 3 agrega metadatos editoriales, animación, dimensiones, enlaces tipados, archivo, timestamps UTC y relación opcional con campaña. Crea únicamente `editorial_campaigns` y `home_blocks`. Los banners anteriores mantienen texto, URL, public ID, publicación y ubicación; quedan con presentación `legacy` y sin movimiento inicial. La composición inicial conserva las secciones de la versión anterior. No borra productos ni cambia credenciales, servicio Render o almacenamiento.
+
+`editorial.py` valida y persiste, `editorial_routes.py` proporciona las rutas protegidas, `templates/posters/macros.html` renderiza carteles y `public/editorial.js` ejecuta las animaciones. Los componentes anteriores de la home están separados en `templates/home/` y se recorren según `home_blocks`. El motor es un registro de funciones, no un enum de base de datos: agregar un efecto no exige migrar el esquema.
+
+### Uso para Valen
+
+1. Entrar en **Administración → Carteles → Crear cartel**.
+2. Escribir nombre interno y texto alternativo, y elegir PNG/JPG/WebP. Una nueva publicación inicia en **Float · 35 % · Publicado**. Para publicarla debe tener una imagen válida. Puede guardarse como borrador sin imagen.
+3. Elegir ubicación, alineación, tamaño, ajuste y orden. `contain` muestra el diseño completo; `cover` es una elección explícita que puede recortar. Las dimensiones originales reservan espacio y las variantes Cloudinary reducen transferencia sin alterar la composición.
+4. Elegir movimiento, intensidad y retraso. Al 35 %, Float recorre 6,3 px en un ciclo de 6,02 segundos. Cero intensidad o animación desactivada muestran el cartel estático.
+5. Elegir destino (producto, catálogo, sección, ruta conocida o HTTPS externo). Solo enlaces externos admiten nueva pestaña. Los enlaces a productos despublicados se omiten automáticamente.
+6. Opcionalmente seleccionar campaña y fechas. Los timestamps son UTC; las entradas se interpretan en `BUSINESS_TIMEZONE` (Buenos Aires por defecto). No necesita un cron: cada visita aplica los límites `inicio <= ahora < vencimiento`, tanto del cartel como de la campaña.
+7. **Actualizar vista previa** permite revisar el mismo componente en un marco de escritorio de 1100 px o celular de 390 px; el área tiene desplazamiento horizontal si no entra. La previsualización no publica ni sube a Cloudinary. Después, **Guardar cartel** confirma el contenido.
+
+Duplicar crea un borrador que comparte la imagen original: no consume una segunda subida. Archivar lo oculta y conserva todo; restaurar lo deja como borrador. Eliminar requiere marcar confirmación y elimina el registro, pero solamente borra el recurso remoto si no tiene referencias en ningún producto, variante, corte, capa, galería o cartel. La cola existente conserva los fallos de limpieza.
+
+La subida nueva se prepara en memoria y ocurre antes de confirmar los cambios del cartel. Si falla el guardado, se compensa la subida; si falla Cloudinary, el registro previo se conserva. La vista previa utiliza una imagen temporal dentro de su respuesta privada (`no-store`). Su CSP permite embeberla exclusivamente en el mismo sitio; el resto de la aplicación sigue sin poder embeberse.
+
+### Composición y campañas
+
+**Composición de la home** permite agregar bloques, cambiar su contenido y moverlos con botones accesibles Subir/Bajar. Hero, catálogo completo y cómo encargar son obligatorios y únicos. La selección destacada puede añadirse aparte. Los grupos toman carteles de una ubicación; un bloque individual tiene prioridad y cada cartel se muestra como máximo una vez. La ubicación manual necesita un bloque individual o grupo manual. Conservar un grupo visible para cada ubicación que se quiera usar. Las fechas, archivo y publicación siempre prevalecen sobre la composición. Los cambios de orden se guardan juntos y se rechazan formularios con revisión obsoleta.
+
+**Campañas** permite nombre, activación, inicio, vencimiento y prioridad. Se asocian carteles desde su editor. Una campaña inactiva o fuera de fecha oculta todos sus carteles; no los elimina. La prioridad mayor aparece antes dentro de cada grupo. No se implementan notificaciones push.
+
+### Identidad, accesibilidad y rendimiento
+
+Playfair Display Italic, peso 700, está alojada en el repositorio y se usa en minúsculas en los títulos editoriales. Archivo y licencia proceden de [Google Fonts](https://github.com/google/fonts/tree/main/ofl/playfairdisplay); licencia en `public/fonts/PlayfairDisplay-OFL.txt`. Administración y textos funcionales mantienen una fuente legible. Los adornos de marca usan símbolos SVG, no emojis.
+
+Las animaciones usan Web Animations y transform/opacity; un IntersectionObserver compartido pausa carteles fuera de pantalla y una sola cola de requestAnimationFrame atiende parallax visible. Una pestaña oculta pausa el movimiento. `prefers-reduced-motion` desactiva el motor y también tiene respaldo CSS. Sin JavaScript/IntersectionObserver, los carteles permanecen estáticos y legibles. Imágenes no críticas: lazy loading, dimensiones reservadas y srcset. No se incorporan librerías de animación.
+
+### Verificación
+
+```powershell
+.venv\Scripts\python -m unittest discover -s tests -v
+node tests/editorial_motion.cjs
+```
+
+Las pruebas automatizadas usan bases temporales y Cloudinary simulado. Cubren migraciones anteriores, fechas y límites, permisos/CSRF, enlaces, publicación incompleta, previsualización sin subida, reemplazo fallido, referencias compartidas, duplicación/archivo/eliminación, campañas y protección de composición. La prueba JavaScript valida efectos, amplitud, intensidad cero, movimiento reducido y pausa por visibilidad. La integración real con Cloudinary debe verificarse aparte desde el panel publicado; una prueba simulada no acredita esa integración.

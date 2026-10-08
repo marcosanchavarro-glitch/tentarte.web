@@ -1,4 +1,12 @@
 {% macro photo(path, alt, eager=false, class='') %}
 {% if image_available(path) %}<img class="{{ class }}" src="{{ image_url(path, 900) }}" {% if path.startswith('https://') %}srcset="{{ image_url(path, 480) }} 480w, {{ image_url(path, 900) }} 900w, {{ image_url(path, 1400) }} 1400w" sizes="(max-width: 700px) 100vw, 50vw"{% endif %} alt="{{ alt }}" loading="{{ 'eager' if eager else 'lazy' }}" decoding="async" width="1179" height="1582"{% if eager %} fetchpriority="high"{% endif %}>{% else %}<span class="photo-pending">La próxima tentación<br><small>Foto pendiente</small></span>{% endif %}
 {% endmacro %}
-{% macro banner_group(banners, location) %}{% for banner in banners if banner.location == location %}<section class="campaign campaign-{{ location }} reveal">{% if image_available(banner.image) %}<div class="campaign-image">{{ photo(banner.image, banner.title) }}</div>{% endif %}<div class="campaign-copy"><p class="eyebrow">Tentarte · Por encargo</p><h2>{{ banner.title }}</h2>{% if banner.subtitle %}<p>{{ banner.subtitle }}</p>{% endif %}{% if banner.cta and banner.link %}<a class="text-link" href="{{ banner.link }}">{{ banner.cta }} <span aria-hidden="true">↗</span></a>{% endif %}</div></section>{% endfor %}{% endmacro %}
+{% macro banner_group(banners, location) %}
+{% from 'posters/macros.html' import poster_card %}
+{% set matches = banners|selectattr('location', 'equalto', location)|list %}
+{% if matches %}
+<div class="poster-group poster-group-{{ location }}">
+{% for banner in matches %}{{ poster_card(banner) }}{% endfor %}
+</div>
+{% endif %}
+{% endmacro %}

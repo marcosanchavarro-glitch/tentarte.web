@@ -31,6 +31,8 @@ def create_app(test_config=None, storage=None):
     storage = storage or CloudinaryStorage()
     catalog = Catalog(database_url)
     app.extensions['catalog'] = catalog
+    from editorial_routes import register_editorial
+    editorial = register_editorial(app, catalog, storage)
 
     @app.cli.command('cleanup-images')
     def cleanup_images():
@@ -64,7 +66,8 @@ def create_app(test_config=None, storage=None):
     @app.get('/')
     def index():
         items = [product_view(p) for p in catalog.list(public=True)]
-        return render_template('index.html', products=items, experiences=[p for p in items if p['show_in_experience']], banners=catalog.banner_list(public=True))
+        blocks, posters = editorial.home()
+        return render_template('index.html', products=items, experiences=[p for p in items if p['show_in_experience']], banners=posters, blocks=blocks)
 
     @app.route('/admin/login', methods=['GET', 'POST'])
     def login():
@@ -210,21 +213,24 @@ def create_app(test_config=None, storage=None):
     @app.get('/admin/banners/new')
     @app.get('/admin/banners/<int:bid>')
     def edit_banner(bid=None):
-        banner = next((b for b in catalog.banner_list() if b['id'] == bid), None)
-        if bid and not banner:
-            abort(404)
-        return render_template('banner_edit.html', banner=banner)
+        return redirect(url_for('editorial.edit', pid=bid))
 
     @app.post('/admin/banners')
     @app.post('/admin/banners/<int:bid>')
     def save_banner(bid=None):
         try:
+            existing = editorial.get(bid) if bid else None
+            if existing and existing['content_kind'] != 'legacy':
+                abort(400, 'Editá este cartel desde Administración → Carteles.')
+            if not bid and request.form.get('active') == 'on' and not request.files.get('image'):
+                abort(400, 'Para publicar un nuevo cartel, cargá una imagen.')
             location = request.form.get('location')
             if location not in ('hero', 'between', 'catalog', 'featured'):
                 raise ValueError('Elegí una ubicación válida.')
             values = {k: string(request.form.get(k), limit, k == 'title') for k, limit in
                       (('title', 150), ('subtitle', 300), ('cta', 60))}
             values.update(location=location, link=safe_link(request.form.get('link')), position=integer(request.form.get('position', 0)), active=request.form.get('active') == 'on')
+            values.update(internal_name=values['title'], alt_text=values['title'], link_type='legacy', link_target=values['link'])
             bid = catalog.save_banner(bid, values, integer(request.form.get('revision', 1), 1, 1000000000))
             file = request.files.get('image')
             if file and file.filename:
@@ -236,6 +242,9 @@ def create_app(test_config=None, storage=None):
 
     @app.post('/admin/banners/<int:bid>/image/delete')
     def delete_banner_image(bid):
+        existing = editorial.get(bid)
+        if existing and existing['content_kind'] != 'legacy':
+            abort(400, 'Reemplazá la imagen desde Carteles o archivá el cartel.')
         if not catalog.has_media_target('banner', bid):
             abort(404)
         catalog.save_media('banner', bid, None, None, None)
@@ -254,6 +263,9 @@ def create_app(test_config=None, storage=None):
     def headers(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' https://res.cloudinary.com; style-src 'self'; script-src 'self'; form-action 'self' https://wa.me https://api.whatsapp.com; frame-ancestors 'none'"
+        if request.endpoint == 'editorial.preview':
+            response.headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data: https://res.cloudinary.com; style-src 'self'; script-src 'self'; form-action 'none'; frame-ancestors 'self'"
+            response.headers['Cache-Control'] = 'no-store'
         return response
 
     return app

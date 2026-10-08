@@ -1,0 +1,5 @@
+<!doctype html><html lang="es-AR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vista previa del cartel</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/editorial.css"><script src="/editorial.js" defer></script></head><body class="poster-preview">
+{% from 'posters/macros.html' import poster_card %}
+<p class="preview-caption">Vista previa · {{ editorial_placements[poster.location] }} · los enlaces no navegan desde esta vista</p>
+{{ poster_card(poster,true) }}
+</body></html>
